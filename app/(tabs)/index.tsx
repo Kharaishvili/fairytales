@@ -1,98 +1,235 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
+import React, { useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
+import AudienceAndlength from "../../components/AudienceAndlength";
+import CharacterPickerModal from "../../components/CharacterPickerModal";
+import { Chip } from "../../components/Chip";
+import { ChipRow } from "../../components/ChipRow";
+import { CtaButton } from "../../components/CtaButton";
+import { GlassCard } from "../../components/GlassCard";
+import MagicBackground from "../../components/MagicBackground";
+import MainCharacterAndSideKickPicker from "../../components/MainCharacterAndSideKickPicker";
+import { SectionTitle } from "../../components/SectionTitle";
+import {
+  MAIN_CHARACTER_CHIPS,
+  MAIN_CHARACTER_MORE,
+  MORALS,
+  SETTINGS,
+  SIDEKICK_CHIPS,
+  SIDEKICK_MORE,
+  TONES,
+} from "../../constants/text";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+type PickerKind = "mainCharacter" | "sidekick";
 
-export default function HomeScreen() {
+export default function CreateStoryScreen() {
+  const [mainCharacter, setMainCharacter] = useState<string>(
+    MAIN_CHARACTER_CHIPS[0],
+  );
+  const [sidekick, setSidekick] = useState<string>(SIDEKICK_CHIPS[0]);
+  const [setting, setSetting] = useState<string>("Forest");
+  const [tone, setTone] = useState<string>("Calm");
+  const [length, setLength] = useState<string>("Short");
+  const [age, setAge] = useState<string>("6-8");
+  const [moral, setMoral] = useState<string>(MORALS[0]);
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerKind, setPickerKind] = useState<PickerKind>("mainCharacter");
+
+  const canGenerate = useMemo(() => {
+    return mainCharacter.length > 1 && sidekick.length > 1;
+  }, [mainCharacter, sidekick]);
+
+  const openPicker = (kind: PickerKind) => {
+    setPickerKind(kind);
+    setPickerOpen(true);
+  };
+
+  const closePicker = () => setPickerOpen(false);
+
+  const moreOptions =
+    pickerKind === "mainCharacter" ? MAIN_CHARACTER_MORE : SIDEKICK_MORE;
+
+  const onSelectMore = (value: string) => {
+    if (pickerKind === "mainCharacter") setMainCharacter(value);
+    else setSidekick(value);
+    closePicker();
+  };
+
+  const onGenerate = async () => {
+    if (!canGenerate) return;
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push({
+      pathname: "/generate",
+      params: {
+        mainCharacter,
+        sidekick,
+        setting,
+        tone,
+        length,
+        age,
+        moral,
+      },
+    });
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View style={{ flex: 1, paddingBottom: 70 }}>
+      <MagicBackground />
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <SafeAreaView style={{ flex: 1 }}>
+        <Animated.View entering={FadeInUp.duration(800)} style={styles.header}>
+          <Text style={styles.title}>Create a fairytale</Text>
+          <Text style={styles.subtitle}>
+            Choose your heroes. A new adventure awaits...
+          </Text>
+        </Animated.View>
+
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 110, paddingHorizontal: 20 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View
+            entering={FadeInDown.delay(80).duration(400)}
+            style={{ marginTop: 20 }}
+          >
+            <MainCharacterAndSideKickPicker
+              setSidekick={setSidekick}
+              setMainCharacter={setMainCharacter}
+              openPicker={openPicker}
+              mainCharacter={mainCharacter}
+              sidekick={sidekick}
+            />
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.delay(80).duration(400)}
+            style={{ marginTop: 20 }}
+          >
+            <GlassCard>
+              <SectionTitle title="Setting" />
+              <ChipRow>
+                {SETTINGS.map((opt) => (
+                  <Chip
+                    key={opt}
+                    label={opt}
+                    selected={opt === setting}
+                    onPress={async () => {
+                      setSetting(opt);
+                      try {
+                        await Haptics.selectionAsync();
+                      } catch {}
+                    }}
+                  />
+                ))}
+              </ChipRow>
+            </GlassCard>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.delay(80).duration(400)}
+            style={{ marginTop: 20 }}
+          >
+            <GlassCard>
+              <SectionTitle title="Tone" />
+              <ChipRow>
+                {TONES.map((opt) => (
+                  <Chip
+                    key={opt}
+                    label={opt}
+                    selected={opt === tone}
+                    onPress={async () => {
+                      setTone(opt);
+                      try {
+                        await Haptics.selectionAsync();
+                      } catch {}
+                    }}
+                  />
+                ))}
+              </ChipRow>
+            </GlassCard>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.delay(80).duration(400)}
+            style={{ marginTop: 20 }}
+          >
+            <GlassCard>
+              <SectionTitle title="Moral" />
+              <ChipRow>
+                {MORALS.map((opt) => (
+                  <Chip
+                    key={opt}
+                    label={opt}
+                    selected={opt === moral}
+                    onPress={async () => {
+                      setMoral(opt);
+                      try {
+                        await Haptics.selectionAsync();
+                      } catch {}
+                    }}
+                  />
+                ))}
+              </ChipRow>
+            </GlassCard>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.delay(80).duration(400)}
+            style={{ marginTop: 20 }}
+          ></Animated.View>
+          <AudienceAndlength
+            setLength={setLength}
+            setAge={setAge}
+            age={age}
+            length={length}
+          />
+        </ScrollView>
+
+        <CtaButton
+          onGenerate={onGenerate}
+          canGenerate={canGenerate}
+          mainCharacter={mainCharacter}
+          sidekick={sidekick}
+          setting={setting}
+          tone={tone}
+          age={age}
+          length={length}
+          moral={moral}
+        />
+
+        <CharacterPickerModal
+          isVisible={pickerOpen}
+          onClose={closePicker}
+          onSelect={onSelectMore}
+          pickerKind={pickerKind}
+          moreOptions={moreOptions}
+        />
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  header: {
+    paddingHorizontal: 16,
+    marginVertical: 20,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  title: {
+    color: "white",
+    fontSize: 28,
+    fontWeight: "600",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  subtitle: {
+    color: "rgba(255,255,255)",
+    marginTop: 8,
+    fontSize: 16,
+  },
+  label: {
+    color: "rgba(255,255,255,0.7)",
+    marginVertical: 8,
   },
 });
