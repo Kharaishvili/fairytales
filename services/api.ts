@@ -23,7 +23,7 @@ export async function generateStoryFromOpenAI(spec: {
       model: "gpt-4o-mini",
       instructions:
         "You are a professional children's storyteller. Write magical, safe, and engaging fairy tales.",
-      input: `Write a ${spec.length} fairytale for a ${spec.age} year old. Characters: ${spec.mainCharacter} and ${spec.sidekick}. Setting: ${spec.setting}. Tone: ${spec.tone}. Moral: ${spec.moral}.`,
+      input: `Write a ${spec.length} fairytale for a ${spec.age} year old. Characters: ${spec.mainCharacter} and ${spec.sidekick}. Setting: ${spec.setting}. Tone: ${spec.tone}. End clearly with the moral lesson`,
       max_output_tokens: 7000,
     }),
   });
