@@ -18,9 +18,17 @@ export type JudgeDecision = {
 };
 
 export type GeneratedStoryResult = {
+  status: "approved";
   story: string;
   judge: JudgeDecision;
 };
+
+export type RejectedStoryResult = {
+  status: "rejected";
+  judge: JudgeDecision;
+};
+
+export type GenerateStoryResult = GeneratedStoryResult | RejectedStoryResult;
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -112,14 +120,6 @@ function parseJudgeDecision(text: string): JudgeDecision {
   };
 }
 
-function formatJudgeFailure(decision: JudgeDecision) {
-  const issues = decision.issues.length
-    ? ` Issues: ${decision.issues.join("; ")}`
-    : "";
-
-  return `Story did not pass the quality review. ${decision.reason}${issues}`;
-}
-
 async function judgeStoryWithOpenAI(
   apiKey: string,
   spec: StorySpec,
@@ -209,12 +209,17 @@ Then output only the JSON.`;
 
 export async function generateStoryFromOpenAI(
   spec: StorySpec,
-): Promise<GeneratedStoryResult> {
+  judgeFeedback?: JudgeDecision | null,
+): Promise<GenerateStoryResult> {
   const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 
   if (!apiKey) {
     throw new Error("Missing OpenAI API key.");
   }
+
+  const feedbackInstruction = judgeFeedback
+    ? `\n\nThe previous draft failed quality review. Improve the new draft using this judge feedback:\nReason: ${judgeFeedback.reason}\nIssues: ${judgeFeedback.issues.length ? judgeFeedback.issues.join("; ") : "None listed"}`
+    : "";
 
   const data = await createResponse(
     apiKey,
@@ -222,7 +227,7 @@ export async function generateStoryFromOpenAI(
       model: "gpt-4o-mini",
       instructions:
         "You are a professional children's storyteller. Write magical, safe, and engaging fairy tales.",
-      input: `Write a ${spec.length} fairytale for a ${spec.age} year old. Characters: ${spec.mainCharacter} and ${spec.sidekick}. Setting: ${spec.setting}. Tone: ${spec.tone}. Moral lesson: ${spec.moral}. End clearly with that moral lesson.`,
+      input: `Write a ${spec.length} fairytale for a ${spec.age} year old. Characters: ${spec.mainCharacter} and ${spec.sidekick}. Setting: ${spec.setting}. Tone: ${spec.tone}. Moral lesson: ${spec.moral}. End clearly with that moral lesson.${feedbackInstruction}`,
       max_output_tokens: 7000,
     },
     "Story generation",
@@ -237,10 +242,14 @@ export async function generateStoryFromOpenAI(
   const judgeDecision = await judgeStoryWithOpenAI(apiKey, spec, text);
 
   if (!judgeDecision.approved || judgeDecision.score < 4) {
-    throw new Error(formatJudgeFailure(judgeDecision));
+    return {
+      status: "rejected",
+      judge: judgeDecision,
+    };
   }
 
   return {
+    status: "approved",
     story: text,
     judge: judgeDecision,
   };

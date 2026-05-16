@@ -51,9 +51,10 @@ export default function GenerateScreen() {
     return { mainCharacter, sidekick, setting, tone, length, age, moral };
   }, [params]);
 
-  const [status, setStatus] = useState<"generating" | "done" | "error">(
-    "generating",
-  );
+  const [status, setStatus] = useState<
+    "generating" | "done" | "quality_failed" | "error"
+  >("generating");
+  const [generationAttempt, setGenerationAttempt] = useState(0);
 
   const [storyText, setStoryText] = useState("");
   const [judgeDecision, setJudgeDecision] = useState<JudgeDecision | null>(
@@ -62,13 +63,16 @@ export default function GenerateScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const cancelledRef = useRef(false);
+  const judgeFeedbackRef = useRef<JudgeDecision | null>(null);
 
   const screenTitle =
     status === "done"
       ? "Your fairytale is ready"
-      : status === "error"
-        ? "Something went wrong"
-        : "Generating your fairytale";
+      : status === "quality_failed"
+        ? "Story needs another try"
+        : status === "error"
+          ? "Something went wrong"
+          : "Generating your fairytale";
 
   const pulse = useSharedValue(0);
   useEffect(() => {
@@ -86,13 +90,29 @@ export default function GenerateScreen() {
       try {
         setStatus("generating");
         setStoryText("");
+        setErrorMsg(null);
         setJudgeDecision(null);
 
-        const result = await generateStoryFromOpenAI(spec);
+        const result = await generateStoryFromOpenAI(
+          spec,
+          judgeFeedbackRef.current,
+        );
         if (cancelled) return;
 
-        setStoryText(result.story);
         setJudgeDecision(result.judge);
+
+        if (result.status === "rejected") {
+          judgeFeedbackRef.current = result.judge;
+          setStoryText("");
+          setStatus("quality_failed");
+          await Haptics.notificationAsync(
+            Haptics.NotificationFeedbackType.Warning,
+          );
+          return;
+        }
+
+        judgeFeedbackRef.current = null;
+        setStoryText(result.story);
         setStatus("done");
 
         await Haptics.notificationAsync(
@@ -113,7 +133,11 @@ export default function GenerateScreen() {
     return () => {
       cancelled = true;
     };
-  }, [spec]);
+  }, [generationAttempt, spec]);
+
+  const onRegenerate = async () => {
+    setGenerationAttempt((attempt) => attempt + 1);
+  };
 
   const onCancel = async () => {
     cancelledRef.current = true;
@@ -212,6 +236,30 @@ export default function GenerateScreen() {
                         {errorMsg ?? "Unknown error"}
                       </Text>
                     </View>
+                  ) : status === "quality_failed" && judgeDecision ? (
+                    <View style={{ marginTop: 14 }}>
+                      <Text style={styles.errorTitle}>
+                        {"Story didn't meet our quality standards"}
+                      </Text>
+                      <QualityScorePanel
+                        score={judgeDecision.score}
+                        reason={judgeDecision.reason}
+                        defaultExpanded
+                        style={styles.qualityPanelSpacing}
+                      />
+                      {judgeDecision.issues.length ? (
+                        <View style={styles.issuesList}>
+                          {judgeDecision.issues.map((issue, index) => (
+                            <Text
+                              key={`${issue}-${index}`}
+                              style={styles.issueText}
+                            >
+                              • {issue}
+                            </Text>
+                          ))}
+                        </View>
+                      ) : null}
+                    </View>
                   ) : (
                     <View style={{ marginTop: 14 }}>
                       {judgeDecision ? (
@@ -246,6 +294,22 @@ export default function GenerateScreen() {
                 style={styles.primaryButton}
               >
                 <Text style={styles.primaryButtonText}>Save to favorites</Text>
+              </LinearGradient>
+            </Pressable>
+          ) : status === "quality_failed" ? (
+            <Pressable
+              onPress={onRegenerate}
+              style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
+            >
+              <LinearGradient
+                colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0.10)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.primaryButton}
+              >
+                <Text style={styles.primaryButtonText}>
+                  Regenerate with feedback
+                </Text>
               </LinearGradient>
             </Pressable>
           ) : (
@@ -334,6 +398,15 @@ const styles = StyleSheet.create({
   },
   errorBody: {
     color: "rgba(255,255,255,0.75)",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  issuesList: {
+    marginTop: 12,
+    gap: 8,
+  },
+  issueText: {
+    color: "rgba(255,255,255,0.76)",
     fontSize: 14,
     lineHeight: 20,
   },

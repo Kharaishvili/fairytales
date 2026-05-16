@@ -145,15 +145,21 @@ This project demonstrates:
 - Local data persistence
 - Clean UI patterns
 
-# 📸 Demo
+# 🎥 Demo Video
+
+https://github.com/user-attachments/assets/3401962a-ee49-454c-81c9-a03bd1fc3b54
+
+**What you'll see:**
+
+- Story creation flow
+- Background LLM Judge running
+- Quality score & feedback
+- Smooth UI with liquid glass effect
+
+# 📸 Screenshots
 
 ![Landing screen](screenshots/landing-screen.png)
 ![Generated story](screenshots/generated-story.png)
 ![Favorites](screenshots/favorites.png)
 ![Story](screenshots/story.png)
-
-
-
-
-https://github.com/user-attachments/assets/3401962a-ee49-454c-81c9-a03bd1fc3b54
-
+![LLM Judge failure](screenshots/llm-judge-failure.png)
