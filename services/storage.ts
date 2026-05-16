@@ -31,6 +31,10 @@ async function writeAllStories(stories: Story[]) {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(stories));
 }
 
+export async function getStories(): Promise<Story[]> {
+  return readAllStories();
+}
+
 function makeTitleFromSpec(spec: StorySpec) {
   return `${spec.mainCharacter} & ${spec.sidekick} in the ${spec.setting}`;
 }

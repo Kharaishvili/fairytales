@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BlurView } from "expo-blur";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
@@ -13,27 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import MagicBackground from "../../components/MagicBackground";
-import { deleteStory } from "../../services/storage";
-
-type StorySpec = {
-  mainCharacter: string;
-  sidekick: string;
-  setting: string;
-  tone: string;
-  length: string;
-  age: string;
-  moral: string;
-};
-
-export type Story = {
-  id: string;
-  title: string;
-  text: string;
-  createdAt: number;
-  spec: StorySpec;
-};
-
-const STORAGE_KEY = "@stories_v1";
+import { deleteStory, getStories, Story } from "../../services/storage";
 
 export default function Favorites() {
   const [stories, setStories] = useState<Story[]>([]);
@@ -42,11 +21,7 @@ export default function Favorites() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
-
-      const parsed: Story[] = raw ? JSON.parse(raw) : [];
-
-      setStories(Array.isArray(parsed) ? parsed : []);
+      setStories(await getStories());
     } catch {
       setStories([]);
     } finally {

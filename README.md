@@ -138,7 +138,4 @@ This project demonstrates:
 ![Favorites](screenshots/favorites.png)
 ![Story](screenshots/story.png)
 
-
 https://github.com/user-attachments/assets/58b6fb03-75f4-43e7-ad7b-ffb731637907
-
-
