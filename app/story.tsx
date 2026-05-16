@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import MagicBackground from "../components/MagicBackground";
+import { QualityScorePanel } from "../components/QualityScorePanel";
 import { deleteStory, getStoryById, Story } from "../services/storage";
 
 type Params = { id?: string };
@@ -172,6 +173,14 @@ export default function StoryScreen() {
                     </Text>
                   ) : null}
 
+                  {story.quality ? (
+                    <QualityScorePanel
+                      score={story.quality.score}
+                      reason={story.quality.reason}
+                      style={styles.qualityPanelSpacing}
+                    />
+                  ) : null}
+
                   <View style={styles.actionRow}>
                     <Pressable
                       onPress={onCopy}
@@ -282,6 +291,9 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.78)",
     fontSize: 13,
     lineHeight: 18,
+  },
+  qualityPanelSpacing: {
+    marginTop: 12,
   },
   actionRow: {
     marginTop: 14,

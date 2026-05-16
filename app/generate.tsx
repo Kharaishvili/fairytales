@@ -22,7 +22,8 @@ import Animated, {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import MagicBackground from "../components/MagicBackground";
-import { generateStoryFromOpenAI } from "../services/api";
+import { QualityScorePanel } from "../components/QualityScorePanel";
+import { generateStoryFromOpenAI, JudgeDecision } from "../services/api";
 import { saveStory } from "../services/storage";
 
 type GenParams = {
@@ -55,9 +56,19 @@ export default function GenerateScreen() {
   );
 
   const [storyText, setStoryText] = useState("");
+  const [judgeDecision, setJudgeDecision] = useState<JudgeDecision | null>(
+    null,
+  );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const cancelledRef = useRef(false);
+
+  const screenTitle =
+    status === "done"
+      ? "Your fairytale is ready"
+      : status === "error"
+        ? "Something went wrong"
+        : "Generating your fairytale";
 
   const pulse = useSharedValue(0);
   useEffect(() => {
@@ -75,11 +86,13 @@ export default function GenerateScreen() {
       try {
         setStatus("generating");
         setStoryText("");
+        setJudgeDecision(null);
 
-        const story = await generateStoryFromOpenAI(spec);
+        const result = await generateStoryFromOpenAI(spec);
         if (cancelled) return;
 
-        setStoryText(story);
+        setStoryText(result.story);
+        setJudgeDecision(result.judge);
         setStatus("done");
 
         await Haptics.notificationAsync(
@@ -122,6 +135,12 @@ export default function GenerateScreen() {
         age: spec.age,
         moral: spec.moral,
       },
+      quality: judgeDecision
+        ? {
+            score: judgeDecision.score,
+            reason: judgeDecision.reason,
+          }
+        : undefined,
       cap: 50,
     });
 
@@ -163,7 +182,7 @@ export default function GenerateScreen() {
             entering={FadeInUp.duration(420)}
             style={{ marginTop: 10 }}
           >
-            <Text style={styles.title}>Generating your fairytale</Text>
+            <Text style={styles.title}>{screenTitle}</Text>
             <Text style={styles.subtitle}>
               {spec.mainCharacter} and {spec.sidekick} in {spec.setting}.
             </Text>
@@ -195,6 +214,14 @@ export default function GenerateScreen() {
                     </View>
                   ) : (
                     <View style={{ marginTop: 14 }}>
+                      {judgeDecision ? (
+                        <QualityScorePanel
+                          score={judgeDecision.score}
+                          reason={judgeDecision.reason}
+                          style={styles.qualityPanelSpacing}
+                        />
+                      ) : null}
+
                       <Text style={styles.storyPreview}>
                         {storyText.length ? storyText : "…"}
                       </Text>
@@ -295,6 +322,9 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.88)",
     fontSize: 18,
     lineHeight: 24,
+  },
+  qualityPanelSpacing: {
+    marginBottom: 16,
   },
   errorTitle: {
     color: "white",

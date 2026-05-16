@@ -20,6 +20,20 @@ Users can generate unique fairytales by selecting:
 
 Stories are generated using an **LLM API**.
 
+## 🧪 LLM Judge Quality Gate
+
+Before a generated story is shown to the user, the app runs a second LLM call as a background judge.
+
+The judge evaluates:
+
+- Child safety
+- Age appropriateness
+- Prompt adherence
+- Requested characters, setting, tone, length, and moral
+- Story coherence
+
+Only stories that pass the quality gate are returned to the UI.
+
 ---
 
 ## ❤️ Favorites

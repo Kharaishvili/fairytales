@@ -114,6 +114,19 @@ export default function Favorites() {
                         {item.spec.length} • {formatDate(item.createdAt)}
                       </Text>
 
+                      {item.quality ? (
+                        <View style={styles.qualityRow}>
+                          <View style={styles.qualityBadge}>
+                            <Text style={styles.qualityBadgeText}>
+                              Quality {item.quality.score}/5
+                            </Text>
+                          </View>
+                          <Text style={styles.qualityReason} numberOfLines={1}>
+                            {item.quality.reason}
+                          </Text>
+                        </View>
+                      ) : null}
+
                       <Text style={styles.preview} numberOfLines={3}>
                         {item.text}
                       </Text>
@@ -235,6 +248,31 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.65)",
     fontSize: 12,
     fontWeight: "700",
+  },
+  qualityRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  qualityBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    backgroundColor: "rgba(125,249,255,0.14)",
+    borderWidth: 1,
+    borderColor: "rgba(125,249,255,0.22)",
+  },
+  qualityBadgeText: {
+    color: "#7DF9FF",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  qualityReason: {
+    flex: 1,
+    color: "rgba(255,255,255,0.58)",
+    fontSize: 12,
+    fontWeight: "600",
   },
   preview: {
     marginTop: 10,

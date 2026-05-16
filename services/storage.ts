@@ -16,6 +16,10 @@ export type Story = {
   text: string;
   createdAt: number;
   spec: StorySpec;
+  quality?: {
+    score: number;
+    reason: string;
+  };
 };
 
 const STORAGE_KEY = "@stories_v1";
@@ -46,6 +50,7 @@ function uid() {
 export async function saveStory(args: {
   text: string;
   spec: StorySpec;
+  quality?: Story["quality"];
 
   id?: string;
   title?: string;
@@ -58,12 +63,13 @@ export async function saveStory(args: {
     id = uid(),
     title = makeTitleFromSpec(spec),
     createdAt = Date.now(),
+    quality,
     cap = 50,
   } = args;
 
   const stories = await readAllStories();
 
-  const nextStory: Story = { id, title, text, createdAt, spec };
+  const nextStory: Story = { id, title, text, createdAt, spec, quality };
 
   const existingIndex = stories.findIndex((s) => s.id === id);
 
